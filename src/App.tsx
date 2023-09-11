@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { ReactElement, useState } from "react";
 import { FieldValues, useForm } from "react-hook-form";
-import { MaskedInput } from "./components/MaskedInput";
+import { MaskedPanInput } from "./components/MaskedPanInput";
 
 export const App = (): ReactElement => {
   const [formValues, setFormValues] = useState<any>({});
@@ -9,6 +9,7 @@ export const App = (): ReactElement => {
 
   const onSubmit = (values: FieldValues): void => {
     console.log(values);
+    values.pan = panNumber;
 
     setFormValues(values);
   };
@@ -16,6 +17,7 @@ export const App = (): ReactElement => {
   const {
     handleSubmit,
     control,
+    setError,
     formState: { errors },
   } = useForm();
 
@@ -25,7 +27,7 @@ export const App = (): ReactElement => {
         <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-7">
           <div className="space-y-1">
             <div>Pan input field: </div>
-            <MaskedInput
+            <MaskedPanInput
               id={"pan"}
               label={"PAN"}
               placeholder={"Enter"}
@@ -33,8 +35,11 @@ export const App = (): ReactElement => {
               errors={errors}
               onChange={setPanNumber}
               value={panNumber}
+              clearErrors={setError}
             />
           </div>
+
+          <div className="">{panNumber}</div>
 
           <button type="submit">Submit</button>
 

@@ -1,7 +1,10 @@
 import { ReactElement } from "react";
 import { Control, Controller, FieldErrorsImpl } from "react-hook-form";
+import { maskPan } from "../services/maskPan";
 
-export interface MaskedInputProps {
+/// This is the example of PAN number masking
+
+export interface MaskedPanInputProps {
   id: string;
   label: string;
   placeholder: string;
@@ -11,6 +14,7 @@ export interface MaskedInputProps {
       [x: string]: any;
     }>
   >;
+  clearErrors: any;
   disabled?: boolean;
   autoComplete?: string;
   maxLength?: number | undefined;
@@ -20,36 +24,54 @@ export interface MaskedInputProps {
   onChange: any;
 }
 
-export const MaskedInput = ({
+export const MaskedPanInput = ({
   id,
   label,
   control,
   errors,
   value,
   onChange,
+  clearErrors,
   required = true,
-}: MaskedInputProps): ReactElement => {
-  const pattern = /^[A-Za-z]{5}[0-9]{4}[A-Za-z]$/; // Basic PAN regex
-
+}: MaskedPanInputProps): ReactElement => {
+  const pattern = /^[A-Za-z]{3}[CHFATBLJGPchfatbljgp][A-Za-z][0-9]{4}[A-Za-z]$/; // Basic PAN regex
   const normalizePanNumber = (value: string): string => {
     value =
       value
-        .replace(/\s/g, "")
+        ?.replace(/\s/g, "")
         .match(/^.{1,5}|.{1,4}/g)
-        ?.join(" ") ?? "";
+        ?.join(" ")
+        .substring(0, 12) ?? "";
     return value;
   };
+
+  const keyUpFunc = (event: any) => {
+    var inputValue = event.target.value;
+    var lastLetter = inputValue.charAt(inputValue.length - 1);
+    if (/[a-zA-Z]/.test(inputValue)) {
+      let val = "";
+      onChange((prev: string) => {
+        if (prev.length === 10 || prev.length >= inputValue.length) {
+          val = prev.length === 2 ? "" : prev.substring(0, prev.length - 1);
+        } else if (inputValue.length !== 12) {
+          val = prev + lastLetter;
+        } else if (inputValue.length === 12) {
+        }
+        return val;
+      });
+    }
+  };
+
   return (
     <Controller
       name={id}
       control={control}
       rules={{
         validate: (val) => {
-          console.log(val);
-          if (required && (val === "" || val === undefined)) {
+          if (required && (value === "" || value === undefined)) {
             return `${label} is required.`;
           }
-          if (val !== "" && val !== undefined && !pattern.test(val)) {
+          if (value !== "" && value !== undefined && !pattern.test(value)) {
             return "Invalid PAN.";
           }
           return true;
@@ -74,10 +96,16 @@ export const MaskedInput = ({
                 type="text"
                 {...field}
                 maxLength={12}
-                value={field.value}
                 onChange={(e) => {
-                  field.onChange(normalizePanNumber(e.target.value));
+                  if (pattern.test(value)) {
+                    clearErrors(id, undefined);
+                  }
+                  keyUpFunc(e);
                 }}
+                value={normalizePanNumber(maskPan(value))}
+                inputMode={
+                  value.length < 5 || value.length > 8 ? "text" : "numeric"
+                }
                 className={`${
                   errors[id] === undefined
                     ? "ring-input-border focus:ring-primary ring-1 focus:ring-2 "
@@ -95,7 +123,7 @@ export const MaskedInput = ({
               )}
             </div>
             {fieldState.error !== undefined && (
-              <p className="text-error text-sm font-normal tracking-wide">
+              <p className="text-red-500 text-sm font-normal tracking-wide">
                 {fieldState.error?.message?.toString()}
               </p>
             )}
